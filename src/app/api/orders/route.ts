@@ -38,7 +38,7 @@ export async function POST(request:Request) {
     const customerText=`Hi ${customerName},\n\nYour order ${reference} has been placed. Total: ${total}. Payment status: ${createdOrder.paymentStatus}. You can follow its status here: ${siteUrl}/orders?reference=${encodeURIComponent(reference)}&email=${encodeURIComponent(email)}`;
     const customerHtml=emailLayout(`<h1 style="color:#12345a">Your order has been placed</h1>${emailParagraph(`Hi ${customerName}, we received your order ${reference}.`)}${emailParagraph(`Order total: ${total}. Payment status: ${createdOrder.paymentStatus}.`)}${emailParagraph("We’ll email you when your order is dispatched and delivered.")}${emailButton("Track your order",`${siteUrl}/orders?reference=${encodeURIComponent(reference)}&email=${encodeURIComponent(email)}`)}`);
     const emailResults=await Promise.allSettled([
-      sendTransactionalEmail({to:adminNotificationAddress(),name:"TechAccesories Admin",subject:`New order ${reference} received`,text:adminText,html:adminHtml}),
+      sendTransactionalEmail({to:adminNotificationAddress(),name:"Mahir Technology Admin",subject:`New order ${reference} received`,text:adminText,html:adminHtml}),
       sendTransactionalEmail({to:email,name:customerName,subject:`Order ${reference} received`,text:customerText,html:customerHtml}),
     ]);
     for(const result of emailResults)if(result.status==="rejected")console.error("Order email could not be sent:",result.reason instanceof Error?result.reason.message:"Unknown email error");

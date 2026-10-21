@@ -22,7 +22,7 @@ export default async function AccountPage() {
   return <>
     <StoreHeader categories={categories}/>
     <main className="page-shell content-width customer-account-page">
-      <span className="eyebrow">YOUR TECHACCESORIES ACCOUNT</span>
+      <span className="eyebrow">YOUR MAHIR TECHNOLOGY ACCOUNT</span>
       <h1>Welcome{session.name ? `, ${session.name.split(" ")[0]}` : " back"}</h1>
       <p className="page-intro">Review your orders and follow their latest fulfilment status.</p>
       <section className="account-orders-section"><div className="section-heading"><div><span className="eyebrow">ORDER HISTORY</span><h2>Your orders</h2></div><Link className="secondary-button" href="/catalog">Continue shopping</Link></div>

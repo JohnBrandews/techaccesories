@@ -17,7 +17,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
   }
   return <article className="product-card">
     <Link className="product-image-wrap" href={`/products/${product.slug}`} aria-label={`View ${product.name}`}>
-      {product.imageUrl ? <Image src={product.imageUrl} alt={product.imageAlt} fill sizes="(max-width: 700px) 50vw, 280px" className="product-image" unoptimized /> : <span className="image-placeholder">TECHACCESORIES</span>}
+      {product.imageUrl ? <Image src={product.imageUrl} alt={product.imageAlt} fill sizes="(max-width: 700px) 50vw, 280px" className="product-image" unoptimized /> : <span className="image-placeholder">MAHIR TECHNOLOGY</span>}
       {product.compareAtMinor && product.compareAtMinor > product.priceMinor ? <span className="product-badge sale-badge">DEAL</span> : null}
     </Link>
     <div className="product-details">

@@ -1,4 +1,4 @@
-# TechAccesories
+# Mahir Technology
 
 Kenyan technology storefront built with Next.js App Router, TypeScript, Prisma, and PostgreSQL on Neon. The Stitch exports in `stitch_electronics_e_commerce_storefront/` are the visual reference for the storefront, catalog, product, checkout, and inventory screens.
 

@@ -34,7 +34,7 @@ export default async function HomePage() {
         id: product.id,
         name: product.name,
         slug: product.slug,
-        brand: product.brand?.name ?? "TechAccesories",
+        brand: product.brand?.name ?? "Mahir Technology",
         category: product.category.name,
         description: product.description,
         priceMinor: product.priceMinor,

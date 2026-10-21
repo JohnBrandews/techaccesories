@@ -16,9 +16,9 @@ export async function POST(request: Request) {
     await prisma.passwordResetToken.deleteMany({ where: { userId: user.id, usedAt: null } });
     await prisma.passwordResetToken.create({ data: { tokenHash, userId: user.id, expiresAt: new Date(Date.now() + 30 * 60 * 1000) } });
     const resetUrl = `${publicSiteUrl(new URL(request.url).origin)}/reset-password?token=${encodeURIComponent(token)}`;
-    const text = `Hi ${user.name || "there"},\n\nUse this link to reset your TechAccesories password. It expires in 30 minutes and can only be used once.\n${resetUrl}\n\nIf you did not request a reset, you can ignore this email.`;
+    const text = `Hi ${user.name || "there"},\n\nUse this link to reset your Mahir Technology password. It expires in 30 minutes and can only be used once.\n${resetUrl}\n\nIf you did not request a reset, you can ignore this email.`;
     const html = emailLayout(`<h1 style="color:#12345a">Reset your password</h1>${emailParagraph(`Hi ${user.name || "there"}, use the secure link below to choose a new password. It expires in 30 minutes and can only be used once.`)}${emailButton("Reset password", resetUrl)}${emailParagraph("If you didn’t request this change, you can ignore this email.")}`);
-    try { await sendTransactionalEmail({ to: user.email, name: user.name, subject: "Reset your TechAccesories password", text, html }); }
+    try { await sendTransactionalEmail({ to: user.email, name: user.name, subject: "Reset your Mahir Technology password", text, html }); }
     catch (error) {
       await prisma.passwordResetToken.deleteMany({ where: { tokenHash } });
       console.error("Password reset email could not be sent:", error instanceof Error ? error.message : "Unknown email error");

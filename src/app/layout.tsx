@@ -3,7 +3,7 @@ import { CartProvider } from "@/components/cart-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TechAccesories | Computing & Tech",
+  title: "Mahir Technology | Computing & Tech",
   description:
     "Shop genuine laptops, computer accessories and technology in Kenya with trusted warranty and delivery.",
 };

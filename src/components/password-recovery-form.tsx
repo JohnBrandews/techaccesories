@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 function RecoveryBrand() {
-  return <Link href="/" className="brand auth-brand"><span className="brand-mark"><span>TA</span></span><span className="brand-copy"><strong>TECHACCESORIES</strong><small>COMPUTING &amp; TECH</small></span></Link>;
+  return <Link href="/" className="brand auth-brand"><span className="brand-mark"><span>MT</span></span><span className="brand-copy"><strong>MAHIR TECHNOLOGY</strong><small>COMPUTING &amp; TECH</small></span></Link>;
 }
 
 export function ForgotPasswordForm() {

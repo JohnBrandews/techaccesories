@@ -16,7 +16,7 @@ function sender() {
   if ((!process.env.BREVO_API_KEY && !smtpConfigured) || !/^\S+@\S+\.\S+$/.test(email)) {
     throw new Error("Brevo email is not configured. Set Brevo SMTP credentials or BREVO_API_KEY and SMTP_FROM to a verified sender address.");
   }
-  return { email, name: match?.[1]?.replace(/^['"]|['"]$/g, "").trim() || "TechAccesories" };
+  return { email, name: match?.[1]?.replace(/^['"]|['"]$/g, "").trim() || "Mahir Technology" };
 }
 
 export async function sendTransactionalEmail({ to, name, subject, text, html }: { to: string; name?: string | null; subject: string; text: string; html: string }) {
@@ -150,7 +150,7 @@ export function emailButton(label: string, url: string) {
 }
 
 export function emailLayout(content: string) {
-  return `<!doctype html><html><body style="margin:0;padding:24px;background:#f4f6f8;font-family:Arial,sans-serif"><div style="max-width:600px;margin:0 auto;padding:28px;background:#fff;border:1px solid #e1e6ed;border-radius:8px"><p style="margin:0 0 22px;color:#12345a;font-weight:800;letter-spacing:.5px">TECHACCESORIES</p>${content}<p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #edf0f4;color:#78859a;font-size:12px">TechAccesories customer care</p></div></body></html>`;
+  return `<!doctype html><html><body style="margin:0;padding:24px;background:#f4f6f8;font-family:Arial,sans-serif"><div style="max-width:600px;margin:0 auto;padding:28px;background:#fff;border:1px solid #e1e6ed;border-radius:8px"><p style="margin:0 0 22px;color:#12345a;font-weight:800;letter-spacing:.5px">MAHIR TECHNOLOGY</p>${content}<p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #edf0f4;color:#78859a;font-size:12px">Mahir Technology customer care</p></div></body></html>`;
 }
 
 export function adminNotificationAddress() {

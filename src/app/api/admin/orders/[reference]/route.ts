@@ -12,8 +12,8 @@ function statusCopy(status: OrderStatus) {
   switch (status) {
     case "pending": return { label: "pending", detail: "Your order is awaiting fulfilment." };
     case "dispatched": return { label: "dispatched", detail: "Your order is on its way. We’ll let you know when it has been delivered." };
-    case "delivered": return { label: "delivered", detail: "Your order is marked as delivered. Thank you for shopping with TechAccesories." };
-    case "completed": return { label: "completed", detail: "Your order is complete. Thank you for shopping with TechAccesories." };
+    case "delivered": return { label: "delivered", detail: "Your order is marked as delivered. Thank you for shopping with Mahir Technology." };
+    case "completed": return { label: "completed", detail: "Your order is complete. Thank you for shopping with Mahir Technology." };
     case "cancelled": return { label: "cancelled", detail: "Your order has been cancelled. Contact customer care if you have questions." };
   }
 }

@@ -179,7 +179,7 @@ async function main() {
 
 main()
   .catch((error: unknown) => {
-    console.error("Failed to seed TechAccesories catalog:", error);
+    console.error("Failed to seed Mahir Technology catalog:", error);
     process.exitCode = 1;
   })
   .finally(async () => {
