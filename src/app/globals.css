@@ -1691,3 +1691,19 @@ main {
   .header-main > .delivery-action small { font-size: 8px; }
   .header-main > .delivery-action strong { max-width: 150px; font-size: 10px; }
 }
+
+/* Keep the product detail tabs after desktop styles so the phone layout wins. */
+@media (max-width: 800px) {
+  .product-information-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 0; }
+  .product-information-tabs { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); }
+  .product-information-tabs button { min-height: 50px; border: 0; border-bottom: 2px solid transparent; background: #fff; color: #707783; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .product-information-tabs button[aria-selected="true"] { border-bottom-color: var(--blue); color: var(--blue); }
+  .product-information-grid [role="tabpanel"] { display: none; min-width: 0; }
+  .product-information-grid [role="tabpanel"].is-active { display: block; }
+  .description-panel,.product-information-grid .spec-section { min-width: 0; margin: 0; padding: 16px 0 0; border: 0; border-radius: 0; background: transparent; }
+  .description-panel > .eyebrow,.description-panel h2,.product-information-grid .spec-section > .eyebrow,.product-information-grid .spec-section h2 { display: none; }
+  .spec-table { margin: 0; overflow: hidden; border: 1px solid #e4e5e7; border-radius: 9px; }
+  .spec-table > div { grid-template-columns: minmax(105px,.78fr) minmax(0,1.22fr); gap: 10px; align-items: center; padding: 13px 16px; }
+  .spec-table dt,.spec-table dd { min-width: 0; font-size: 13px; line-height: 1.5; }
+  .spec-table dd { overflow-wrap: anywhere; }
+}

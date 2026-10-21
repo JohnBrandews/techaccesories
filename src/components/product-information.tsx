@@ -3,12 +3,12 @@
 import { useState } from "react";
 
 export function ProductInformation({ description, specifications }: { description: string; specifications: Record<string, string> }) {
-  const [active, setActive] = useState<"description" | "specifications">("description");
+  const [active, setActive] = useState<"description" | "specifications">("specifications");
   const entries = Object.entries(specifications);
   return <section className="product-information-grid" aria-label="Product information">
     <div className="product-information-tabs" role="tablist" aria-label="Product details">
-      <button id="description-tab" role="tab" aria-selected={active === "description"} aria-controls="description-panel" onClick={() => setActive("description")}>Description</button>
-      <button id="specifications-tab" role="tab" aria-selected={active === "specifications"} aria-controls="specifications-panel" onClick={() => setActive("specifications")}>Specifications</button>
+      <button type="button" id="specifications-tab" role="tab" aria-selected={active === "specifications"} aria-controls="specifications-panel" onClick={() => setActive("specifications")}>Specifications</button>
+      <button type="button" id="description-tab" role="tab" aria-selected={active === "description"} aria-controls="description-panel" onClick={() => setActive("description")}>Description</button>
     </div>
     <article id="description-panel" role="tabpanel" aria-labelledby="description-tab" className={`description-panel${active === "description" ? " is-active" : ""}`}>
       <span className="eyebrow">ABOUT THIS PRODUCT</span><h2>Product description</h2><p>{description}</p>
