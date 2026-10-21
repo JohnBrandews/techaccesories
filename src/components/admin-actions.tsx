@@ -34,35 +34,44 @@ function SpecificationFields({ defaultValue = "{}" }: { defaultValue?: string })
   </fieldset>;
 }
 
-function CloudinaryImageField({ defaultValue = "" }: { defaultValue?: string }) {
-  const [url, setUrl] = useState(defaultValue);
+type ProductImageValue = { url: string; altText: string };
+function CloudinaryProductImagesField({ defaultValue = [] }: { defaultValue?: ProductImageValue[] }) {
+  const [images, setImages] = useState(defaultValue);
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  async function upload(file: File) {
-    setUploading(true);
-    setMessage("");
-    const data = new FormData();
-    data.set("file", file);
+  async function upload(files: FileList) {
+    setUploading(true); setMessage("");
     try {
-      const response = await fetch("/api/admin/uploads", { method: "POST", body: data });
-      const result = await response.json() as { url?: string; error?: string };
-      if (!response.ok || !result.url) throw new Error(result.error ?? "Could not upload the image.");
-      setUrl(result.url);
-      setMessage("Image uploaded to Cloudinary.");
+      const uploaded: ProductImageValue[] = [];
+      for (const file of Array.from(files)) {
+        const data = new FormData(); data.set("file", file);
+        const response = await fetch("/api/admin/uploads", { method: "POST", body: data });
+        const result = await response.json() as { url?: string; error?: string };
+        if (!response.ok || !result.url) throw new Error(result.error ?? `Could not upload ${file.name}.`);
+        uploaded.push({ url: result.url, altText: "" });
+      }
+      setImages(current => [...current, ...uploaded]);
+      setMessage(`${uploaded.length} image${uploaded.length === 1 ? "" : "s"} uploaded. Add a color or angle label to each image.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not upload the image.");
-    } finally {
-      setUploading(false);
-    }
+    } finally { setUploading(false); }
+  }
+
+  function move(index: number, direction: -1 | 1) {
+    setImages(current => {
+      const target = index + direction;
+      if (target < 0 || target >= current.length) return current;
+      const next = [...current]; [next[index], next[target]] = [next[target], next[index]]; return next;
+    });
   }
 
   return <div className="form-wide image-upload-field">
-    <label>Product image URL<input name="imageUrl" type="url" value={url} onChange={event => setUrl(event.target.value)} placeholder="Paste an HTTPS image URL or upload below"/></label>
-    <label>Upload to Cloudinary<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={uploading} onChange={event => { const file = event.target.files?.[0]; if (file) void upload(file); event.target.value = ""; }}/><small>JPG, PNG, WebP or AVIF, up to 8 MB. The API secret stays on the server.</small></label>
-    {uploading ? <small role="status">Uploading image…</small> : null}
+    <label>Upload product photos to Cloudinary<input type="file" multiple accept="image/jpeg,image/png,image/webp,image/avif" disabled={uploading} onChange={event => { const files = event.target.files; if (files?.length) void upload(files); event.target.value = ""; }}/><small>Upload multiple colors or product angles. JPG, PNG, WebP or AVIF, up to 8 MB each.</small></label>
+    {uploading ? <small role="status">Uploading images?</small> : null}
     {message ? <small role="status">{message}</small> : null}
-    {url ? <Image className="product-image-preview" src={url} alt="Product image preview" width={108} height={90} unoptimized/> : null}
+    {images.length ? <div className="admin-image-list">{images.map((image, index) => <div className="admin-image-item" key={`${image.url}-${index}`}><Image className="product-image-preview" src={image.url} alt={image.altText || `Product image ${index + 1}`} width={108} height={90} unoptimized/><label><span>{index === 0 ? "Main photo" : `Photo ${index + 1}`} ? label / color</span><input value={image.altText} maxLength={160} placeholder={index === 0 ? "e.g. Silver, front view" : "e.g. Midnight black, side view"} onChange={event => setImages(current => current.map((item, i) => i === index ? { ...item, altText: event.target.value } : item))}/></label><div className="admin-image-actions"><button className="secondary-button" type="button" disabled={index === 0} aria-label="Move photo earlier" onClick={() => move(index, -1)}>?</button><button className="secondary-button" type="button" disabled={index === images.length - 1} aria-label="Move photo later" onClick={() => move(index, 1)}>?</button><button className="text-button" type="button" onClick={() => setImages(current => current.filter((_, i) => i !== index))}>Remove</button></div></div>)}</div> : null}
+    <input type="hidden" name="productImages" value={JSON.stringify(images)}/>
   </div>;
 }
 
@@ -91,7 +100,7 @@ export function AdminProductForm({ categories, brands }: { categories: Choice[];
     <label>Price (KSh)<input name="priceKsh" type="number" min="1" step="0.01" required/></label>
     <label>Initial stock<input name="stockQuantity" type="number" min="0" max="100000" defaultValue="0" required/></label>
     <label>Warranty (months)<input name="warrantyMonths" type="number" min="0" max="120"/></label>
-    <CloudinaryImageField/>
+    <CloudinaryProductImagesField/>
     <label className="form-wide">Description<textarea name="description" rows={4} required maxLength={8000}/></label>
     <SpecificationFields/>
     <label className="check-filter form-wide"><input name="isFeatured" type="checkbox"/> Feature on the storefront</label>
@@ -114,7 +123,7 @@ export function StockAdjustment({ id, stock }: { id: string; stock: number }) {
   return <span className="stock-editor"><input aria-label="Set stock quantity" type="number" min="0" max="100000" value={value} onChange={event => setValue(event.target.value)}/><button className="secondary-button" disabled={saving || Number(value) === stock} onClick={save}>{saving ? "Saving" : "Save"}</button>{message ? <small role="alert">{message}</small> : null}</span>;
 }
 
-type EditableProduct = { id: string; name: string; slug: string; sku: string; model: string | null; description: string; categoryId: string; brandId: string | null; priceMinor: number; stockQuantity: number; warrantyMonths: number | null; specifications: string; isPublished: boolean; isFeatured: boolean; imageUrl: string };
+type EditableProduct = { id: string; name: string; slug: string; sku: string; model: string | null; description: string; categoryId: string; brandId: string | null; priceMinor: number; stockQuantity: number; warrantyMonths: number | null; specifications: string; isPublished: boolean; isFeatured: boolean; images: ProductImageValue[] };
 export function ProductEditor({ product, categories, brands }: { product: EditableProduct; categories: Choice[]; brands: Choice[] }) {
   const [message, setMessage] = useState(""); const [saving, setSaving] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -138,7 +147,7 @@ export function ProductEditor({ product, categories, brands }: { product: Editab
     <label>Price (KSh)<input name="priceKsh" type="number" min="1" step="0.01" defaultValue={(product.priceMinor / 100).toFixed(2)} required/></label>
     <label>Stock<input name="stockQuantity" type="number" min="0" max="100000" defaultValue={product.stockQuantity} required/></label>
     <label>Warranty (months)<input name="warrantyMonths" type="number" min="0" max="120" defaultValue={product.warrantyMonths ?? ""}/></label>
-    <CloudinaryImageField defaultValue={product.imageUrl}/>
+    <CloudinaryProductImagesField defaultValue={product.images}/>
     <label className="form-wide">Description<textarea name="description" rows={3} defaultValue={product.description} required maxLength={8000}/></label>
     <SpecificationFields defaultValue={product.specifications}/>
     <label className="check-filter"><input name="isPublished" type="checkbox" defaultChecked={product.isPublished}/> Published</label>
