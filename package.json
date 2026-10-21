@@ -10,8 +10,10 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:deploy": "tsx prisma/deploy-postgresql.ts",
+    "db:import-sqlite": "tsx prisma/import-sqlite-data.ts",
     "db:seed": "prisma db seed",
-    "db:setup": "prisma migrate dev --name init && prisma db seed",
+    "db:setup": "prisma migrate deploy && prisma db seed",
     "db:admin": "tsx prisma/seed-admin.ts"
   },
   "dependencies": {

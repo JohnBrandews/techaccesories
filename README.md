@@ -1,16 +1,16 @@
 # TechAccesories
 
-Kenyan technology storefront built with Next.js App Router, TypeScript, Prisma, and SQLite. The Stitch exports in `stitch_electronics_e_commerce_storefront/` are the visual reference for the storefront, catalog, product, checkout, and inventory screens.
+Kenyan technology storefront built with Next.js App Router, TypeScript, Prisma, and PostgreSQL on Neon. The Stitch exports in `stitch_electronics_e_commerce_storefront/` are the visual reference for the storefront, catalog, product, checkout, and inventory screens.
 
 ## Run locally
 
 1. Use Node.js 20 or newer.
 2. Install packages with `npm install`.
-3. Ensure `.env` has the SQLite `DATABASE_URL`, a random `AUTH_SECRET` (at least 32 characters), `ADMIN_EMAIL`, and a strong `ADMIN_PASSWORD`. Add Cloudinary's `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` for product image uploads; keep these server-only and retain any existing values.
-4. Create the local database, first migration, and demo catalog with `npm run db:setup`.
+3. Ensure `.env` has the Neon PostgreSQL `DATABASE_URL`, a random `AUTH_SECRET` (at least 32 characters), `ADMIN_EMAIL`, and a strong `ADMIN_PASSWORD`. Add Cloudinary's `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` for product image uploads; keep these server-only and retain any existing values.
+4. Deploy the checked-in PostgreSQL migrations with `npm run db:deploy`, copy existing local records with `npm run db:import-sqlite` if needed, then seed the demo catalog and configured admin with `npm run db:seed`.
 5. Start Next.js with `npm run dev`.
 
-The SQLite database is `prisma/dev.db` and is ignored by Git. `npm run db:seed` can refresh demo categories, brands, and products. Do not use Prisma reset commands on a database containing work you want to keep.
+The old SQLite database is preserved at `prisma/dev.db` and is ignored by Git. Its original migration history is archived at `prisma/migrations-sqlite-archive/`; PostgreSQL migrations live at `prisma/migrations/`. `npm run db:deploy` uses Neon’s direct endpoint for migrations when `DATABASE_URL` contains a pooled hostname, without changing `.env`. To copy existing SQLite rows into a newly migrated, empty Neon database, run `npm run db:import-sqlite` before `npm run db:seed`. The import stops if the destination already contains application records. `npm run db:seed` can refresh demo categories, brands, and products, and upserts the admin account using `ADMIN_EMAIL` and `ADMIN_PASSWORD`. Do not use Prisma reset commands on a database containing work you want to keep.
 
 ## Implemented screens and flows
 
@@ -31,7 +31,7 @@ Payment initiation and webhook verification, delivery pricing, category name/des
 
 ## Database migration direction
 
-SQLite is the active development database. Prices use integer minor units; product specifications use JSON text so SQLite and PostgreSQL can share the catalog structure. When moving to Neon, switch Prisma to PostgreSQL, create a new PostgreSQL migration history, then migrate and verify data deliberately. Do not use the SQLite migration files as PostgreSQL migrations or point a live database URL at `prisma migrate reset`.
+PostgreSQL on Neon is the active database. Prices use integer minor units; product specifications use JSON text. The initial PostgreSQL migration was generated independently from the archived SQLite migration history. Do not point a live database URL at `prisma migrate reset`.
 
 ## Project checks
 
