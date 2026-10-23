@@ -172,7 +172,7 @@ export function DeleteProductButton({ id, name }: { id: string; name: string }) 
   return <div className="delete-product-row"><button type="button" className="text-button" disabled={busy} onClick={remove}>{busy ? "Deleting…" : "Delete product"}</button>{message ? <small role="alert">{message}</small> : null}</div>;
 }
 
-export function CancelDemoOrder({ reference, status, paymentStatus }: { reference: string; status: string; paymentStatus: string }) {
+export function CancelDemoOrder({ reference, status, paymentStatus, paymentMethod }: { reference: string; status: string; paymentStatus: string; paymentMethod: string }) {
   const [message, setMessage] = useState(""); const [saving, setSaving] = useState(false);
   async function cancel() {
     if (!window.confirm(`Cancel ${reference} and return its reserved stock?`)) return;
@@ -180,10 +180,10 @@ export function CancelDemoOrder({ reference, status, paymentStatus }: { referenc
     try { const response = await fetch(`/api/admin/orders/${encodeURIComponent(reference)}`, { method: "PATCH" }); const result = await response.json() as { error?: string }; if (!response.ok) throw new Error(result.error ?? "Could not cancel this order."); window.location.reload(); }
     catch (error) { setMessage(error instanceof Error ? error.message : "Could not cancel this order."); setSaving(false); }
   }
-  return status === "pending" && paymentStatus === "pending" ? <span className="stock-editor"><button className="secondary-button" disabled={saving} onClick={cancel}>{saving ? "Cancelling…" : "Cancel & restock"}</button>{message ? <small role="alert">{message}</small> : null}</span> : null;
+  return status === "pending" && paymentStatus === "pending" && paymentMethod === "demo" ? <span className="stock-editor"><button className="secondary-button" disabled={saving} onClick={cancel}>{saving ? "Cancelling…" : "Cancel & restock"}</button>{message ? <small role="alert">{message}</small> : null}</span> : null;
 }
 
-export function OrderStatusEditor({ reference, status }: { reference: string; status: string }) {
+export function OrderStatusEditor({ reference, status, paymentMethod, paymentStatus }: { reference: string; status: string; paymentMethod: string; paymentStatus: string }) {
   const [value, setValue] = useState(status); const [message, setMessage] = useState(""); const [saving, setSaving] = useState(false);
   async function save() {
     setSaving(true); setMessage("");
@@ -191,6 +191,7 @@ export function OrderStatusEditor({ reference, status }: { reference: string; st
     catch (error) { setMessage(error instanceof Error ? error.message : "Could not update order status."); setSaving(false); }
   }
   if (status === "cancelled") return <span className="order-cancelled">Cancelled</span>;
+  if (paymentMethod === "payhero" && paymentStatus !== "paid") return <span className="muted-copy">Awaiting payment</span>;
   return <span className="stock-editor order-status-editor"><select aria-label={`Status for order ${reference}`} value={value} onChange={event => setValue(event.target.value)}><option value="pending">Pending</option><option value="dispatched">Dispatched</option><option value="delivered">Delivered</option><option value="completed">Completed</option></select><button className="secondary-button" disabled={saving || value === status} onClick={save}>{saving ? "Saving" : "Update"}</button>{message ? <small role="alert">{message}</small> : null}</span>;
 }
 

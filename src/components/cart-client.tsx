@@ -25,7 +25,7 @@ export default function CartClient() {
       </article>)}</section>
       <aside className="order-summary"><h2>Order summary</h2><div><span>Items ({count})</span><strong>{formatPrice(subtotal)}</strong></div>
         <div><span>Delivery</span><strong>Arranged separately</strong></div><div className="summary-total"><span>Product subtotal</span><strong>{formatPrice(subtotal)}</strong></div>
-        <p>The demo order total excludes delivery. The store will confirm delivery arrangements separately.</p>
+        <p>M-Pesa checkout uses the product subtotal shown. The store will confirm delivery arrangements separately.</p>
         <Link className="primary-button full-button" href="/checkout">Continue to checkout</Link><Link className="continue-shopping" href="/catalog">Continue shopping</Link>
       </aside>
     </div> : <div className="empty-cart"><span className="empty-cart-icon">▢</span><h2>Your cart is empty</h2><p>Browse the catalog and add products you need.</p><Link className="primary-button" href="/catalog">Shop the catalog</Link></div>}

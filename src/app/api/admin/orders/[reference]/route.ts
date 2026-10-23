@@ -35,7 +35,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ re
   const { reference } = await params;
   let requestedStatus: unknown;
   try {
-    requestedStatus = (await request.json() as { status?: unknown }).status;
+    const raw = await request.text();
+    requestedStatus = raw.trim() ? (JSON.parse(raw) as { status?: unknown }).status : "cancelled";
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
@@ -46,17 +47,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ re
   const status = requestedStatus as OrderStatus;
   const order = await prisma.order.findUnique({
     where: { reference },
-    select: { id: true, email: true, customerName: true, status: true, paymentStatus: true },
+    select: { id: true, email: true, customerName: true, status: true, paymentStatus: true, paymentMethod: true },
   });
   if (!order) return NextResponse.json({ error: "Order not found." }, { status: 404 });
   if (order.status === status) return NextResponse.json({ ok: true, unchanged: true });
+  if (order.paymentMethod === "payhero" && order.paymentStatus !== "paid") return NextResponse.json({ error: "Wait for PayHero to confirm payment before changing fulfilment status." }, { status: 409 });
 
   try {
     if (status === "cancelled") {
       await prisma.$transaction(async tx => {
         const current = await tx.order.findUnique({ where: { id: order.id }, include: { items: true } });
         if (!current) throw new OrderUpdateError("Order not found.");
-        if (current.status !== "pending" || current.paymentStatus !== "pending") {
+        if (current.status !== "pending" || current.paymentStatus !== "pending" || current.paymentMethod !== "demo") {
           throw new OrderUpdateError("Only unpaid pending demo orders can be cancelled here.");
         }
         const changed = await tx.order.updateMany({

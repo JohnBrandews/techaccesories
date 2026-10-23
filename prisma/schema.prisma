@@ -92,6 +92,9 @@ model Order {
   notes           String?
   paymentMethod   String      @default("demo")
   paymentStatus   String      @default("pending")
+  paymentProviderReference String?
+  paymentCheckoutRequestId String?
+  paymentReceipt  String?
   status          String      @default("pending")
   currency        String      @default("KES")
   subtotalMinor   Int
