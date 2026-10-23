@@ -16,7 +16,11 @@ function config() {
   try { callbackUrl = new URL(callback); } catch { throw new Error("PAYHERO_CALLBACK_URL must be a valid HTTPS URL."); }
   if (callbackUrl.protocol !== "https:") throw new Error("PAYHERO_CALLBACK_URL must use HTTPS.");
   if (callbackUrl.pathname === "/") callbackUrl.pathname = "/api/payments/payhero/callback";
-  return { token: token.replace(/^Basic\s+/i, ""), channelId, callbackUrl };
+  // PayHero's API key is normally the base64 part of a Basic auth header.
+  // Also accept a raw username:password pair to make Vercel env setup less error-prone.
+  const credential = token.replace(/^Basic\s+/i, "");
+  const basicToken = credential.includes(":") ? Buffer.from(credential).toString("base64") : credential;
+  return { token: basicToken, channelId, callbackUrl };
 }
 
 export function assertPayHeroConfigured() { config(); }
@@ -58,9 +62,17 @@ export async function requestPayHeroStk({ amount, phone, reference, customerName
     throw new PayHeroUncertainError("We could not confirm whether PayHero received the request.");
   }
 
-  const payload = await response.json().catch(() => null) as { success?: unknown; status?: unknown; reference?: unknown; CheckoutRequestID?: unknown } | null;
+  const responseText = await response.text();
+  let payload: { success?: unknown; status?: unknown; reference?: unknown; CheckoutRequestID?: unknown; error?: unknown; message?: unknown; detail?: unknown } | null = null;
+  try { payload = JSON.parse(responseText); } catch { /* Some gateway errors are not JSON. */ }
   if (!response.ok || payload?.success !== true) {
-    console.error("PayHero rejected STK request", { httpStatus: response.status, status: payload?.status });
+    const providerError = [payload?.error, payload?.message, payload?.detail]
+      .find((value): value is string => typeof value === "string");
+    console.error("PayHero rejected STK request", {
+      httpStatus: response.status,
+      providerStatus: typeof payload?.status === "string" || typeof payload?.status === "number" ? payload.status : undefined,
+      providerError: providerError?.slice(0, 300) ?? (!payload ? responseText.slice(0, 300) : undefined),
+    });
     throw new Error("PayHero could not start the M-Pesa prompt. Check the phone number and payment settings, then try again.");
   }
   return {
