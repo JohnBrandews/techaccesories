@@ -68,10 +68,13 @@ export async function requestPayHeroStk({ amount, phone, reference, customerName
   if (!response.ok || payload?.success !== true) {
     const providerError = [payload?.error, payload?.message, payload?.detail]
       .find((value): value is string => typeof value === "string");
-    console.error("PayHero rejected STK request", {
-      httpStatus: response.status,
+    console.error("PayHero error", response.status, responseText.slice(0, 500));
+    // Keep structured fields too, in case PayHero returns a JSON error object.
+    console.error("PayHero error details", {
       providerStatus: typeof payload?.status === "string" || typeof payload?.status === "number" ? payload.status : undefined,
-      providerError: providerError?.slice(0, 300) ?? (!payload ? responseText.slice(0, 300) : undefined),
+      providerError: providerError?.slice(0, 300),
+      channelIdConfigured: Number.isSafeInteger(settings.channelId) && settings.channelId > 0,
+      basicTokenConfigured: settings.token.length > 0,
     });
     throw new Error("PayHero could not start the M-Pesa prompt. Check the phone number and payment settings, then try again.");
   }
