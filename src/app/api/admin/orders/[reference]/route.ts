@@ -51,7 +51,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ re
   });
   if (!order) return NextResponse.json({ error: "Order not found." }, { status: 404 });
   if (order.status === status) return NextResponse.json({ ok: true, unchanged: true });
-  if (order.paymentMethod === "payhero" && order.paymentStatus !== "paid") return NextResponse.json({ error: "Wait for PayHero to confirm payment before changing fulfilment status." }, { status: 409 });
+  if (order.paymentMethod !== "demo" && order.paymentStatus !== "paid") return NextResponse.json({ error: "Wait for the payment provider to confirm payment before changing fulfilment status." }, { status: 409 });
 
   try {
     if (status === "cancelled") {

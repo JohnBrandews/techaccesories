@@ -191,7 +191,7 @@ export function OrderStatusEditor({ reference, status, paymentMethod, paymentSta
     catch (error) { setMessage(error instanceof Error ? error.message : "Could not update order status."); setSaving(false); }
   }
   if (status === "cancelled") return <span className="order-cancelled">Cancelled</span>;
-  if (paymentMethod === "payhero" && paymentStatus !== "paid") return <span className="muted-copy">Awaiting payment</span>;
+  if (paymentMethod !== "demo" && paymentStatus !== "paid") return <span className="muted-copy">Awaiting payment</span>;
   return <span className="stock-editor order-status-editor"><select aria-label={`Status for order ${reference}`} value={value} onChange={event => setValue(event.target.value)}><option value="pending">Pending</option><option value="dispatched">Dispatched</option><option value="delivered">Delivered</option><option value="completed">Completed</option></select><button className="secondary-button" disabled={saving || value === status} onClick={save}>{saving ? "Saving" : "Update"}</button>{message ? <small role="alert">{message}</small> : null}</span>;
 }
 
