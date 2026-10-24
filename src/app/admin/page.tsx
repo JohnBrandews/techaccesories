@@ -1,37 +1,55 @@
-import { StoreHeader } from "@/components/store-header";
-import { AdminCategoryManager, AdminProductForm, CancelDemoOrder, OrderStatusEditor, ProductEditor, StockAdjustment } from "@/components/admin-actions";
-import { SignOutButton } from "@/components/sign-out-button";
+import Link from "next/link";
 import { formatPrice } from "@/lib/format";
-import { requireAdminPage } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+function partsInNairobi(date: Date) {
+  return Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Nairobi", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date).map(part => [part.type, part.value]));
+}
+function dayKey(date: Date) {
+  const parts = partsInNairobi(date);
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+function nairobiMidnight(date: Date) {
+  const parts = partsInNairobi(date);
+  return new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)) - 3 * 60 * 60 * 1000);
+}
+
 export default async function AdminPage() {
-  const session = await requireAdminPage();
-  const [categories, allCategories, brands, products, orders, counts, paidSales] = await Promise.all([
-    prisma.category.findMany({ where: { isActive: true, parentId: null }, orderBy: { sortOrder: "asc" }, select: { id: true, name: true, slug: true } }),
-    prisma.category.findMany({ orderBy: { sortOrder: "asc" }, select: { id: true, name: true, isActive: true } }),
-    prisma.brand.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.product.findMany({ orderBy: [{ stockQuantity: "asc" }, { name: "asc" }], include: { brand: true, category: true, images: { orderBy: { sortOrder: "asc" } } }, take: 100 }),
-    prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 50, select: { reference: true, customerName: true, status: true, paymentStatus: true, paymentMethod: true, totalMinor: true, createdAt: true } }),
+  const now = new Date();
+  const todayStart = nairobiMidnight(now);
+  const trendStart = new Date(todayStart.getTime() - 13 * 86_400_000);
+  const [products, todayOrders, customerCount, revenue, recentOrders, trendOrders] = await Promise.all([
     prisma.product.aggregate({ _count: { id: true }, _sum: { stockQuantity: true } }),
-    prisma.order.aggregate({ where: { paymentStatus: "paid" }, _count: { reference: true }, _sum: { totalMinor: true } }),
+    prisma.order.count({ where: { createdAt: { gte: todayStart } } }),
+    prisma.user.count({ where: { role: "customer" } }),
+    prisma.order.aggregate({ where: { paymentStatus: "paid", status: { not: "cancelled" } }, _sum: { totalMinor: true } }),
+    prisma.order.findMany({ orderBy: { createdAt: "desc" }, take: 8, select: { reference: true, customerName: true, status: true, paymentStatus: true, totalMinor: true, createdAt: true } }),
+    prisma.order.findMany({ where: { paymentStatus: "paid", status: { not: "cancelled" }, createdAt: { gte: trendStart } }, select: { totalMinor: true, createdAt: true } }),
   ]);
-  const lowStock = products.filter(product => product.stockQuantity < 5).length;
+  const lowStockCount = await prisma.product.count({ where: { isPublished: true, stockQuantity: { lt: 5 } } });
+  const byDay = new Map<string, number>();
+  for (const order of trendOrders) byDay.set(dayKey(order.createdAt), (byDay.get(dayKey(order.createdAt)) ?? 0) + order.totalMinor);
+  const days = Array.from({ length: 14 }, (_, index) => {
+    const date = new Date(todayStart.getTime() + index * 86_400_000);
+    const key = dayKey(date);
+    return { key, label: new Intl.DateTimeFormat("en-KE", { timeZone: "Africa/Nairobi", weekday: "short", day: "numeric" }).format(date), value: byDay.get(key) ?? 0 };
+  });
+  const maxSales = Math.max(1, ...days.map(day => day.value));
 
-  return <>
-    <StoreHeader categories={categories}/>
-    <main className="page-shell content-width admin-page">
-      <div className="admin-heading-row"><div><span className="eyebrow">STORE OPERATIONS</span><h1>Inventory dashboard</h1></div><div className="admin-user"><span>{session.email}</span><SignOutButton/></div></div>
-      <p className="page-intro">Manage your catalog, inventory and customer orders.</p>
-      <div className="admin-metrics"><article><span>Catalog products</span><strong>{counts._count.id}</strong></article><article><span>Total units on hand</span><strong>{counts._sum.stockQuantity ?? 0}</strong></article><article><span>Low stock (&lt; 5 units)</span><strong>{lowStock}</strong></article><article><span>Verified paid sales</span><strong>{formatPrice(paidSales._sum.totalMinor ?? 0)}</strong><small>{paidSales._count.reference} paid orders</small></article></div>
-
-      <section className="admin-panel"><div className="section-heading"><div><span className="eyebrow">PRODUCT MANAGEMENT</span><h2>Add a catalog product</h2></div><span className="demo-label">Local catalog</span></div><AdminProductForm categories={categories} brands={brands}/></section>
-      <section className="admin-panel"><div className="section-heading"><div><span className="eyebrow">CATEGORY MANAGEMENT</span><h2>Store departments</h2></div></div><AdminCategoryManager categories={allCategories}/></section>
-      <section className="admin-panel"><div className="section-heading"><div><span className="eyebrow">INVENTORY CONTROL</span><h2>Stock levels &amp; products</h2></div></div><div className="table-scroll"><table className="admin-table"><thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Price</th><th>Units</th><th>Manage</th></tr></thead><tbody>{products.map(product => <tr key={product.id}><td><strong>{product.name}</strong><small>{product.brand?.name ?? "Unbranded"} · {product.stockQuantity === 0 ? "Out of stock" : product.isPublished ? "Published" : "Archived"}</small></td><td>{product.sku}</td><td>{product.category.name}</td><td>{formatPrice(product.priceMinor)}</td><td><StockAdjustment id={product.id} stock={product.stockQuantity}/></td><td><ProductEditor product={{ id: product.id, name: product.name, slug: product.slug, sku: product.sku, model: product.model, description: product.description, categoryId: product.categoryId, brandId: product.brandId, priceMinor: product.priceMinor, stockQuantity: product.stockQuantity, warrantyMonths: product.warrantyMonths, specifications: product.specifications, isPublished: product.isPublished, isFeatured: product.isFeatured, images: product.images.map(image => ({ url: image.url, altText: image.altText })) }} categories={categories} brands={brands}/></td></tr>)}</tbody></table></div></section>
-      <section className="admin-panel"><div className="section-heading"><div><span className="eyebrow">CUSTOMER ACTIVITY</span><h2>Order tracking</h2></div></div>{orders.length ? <div className="table-scroll"><table className="admin-table"><thead><tr><th>Reference</th><th>Customer</th><th>Date</th><th>Fulfilment</th><th>Payment</th><th>Total</th><th>Update status</th></tr></thead><tbody>{orders.map(order => <tr key={order.reference}><td>{order.reference}</td><td>{order.customerName}</td><td>{order.createdAt.toLocaleDateString("en-KE")}</td><td><OrderStatusEditor reference={order.reference} status={order.status} paymentMethod={order.paymentMethod} paymentStatus={order.paymentStatus}/></td><td>{order.paymentMethod} ? {order.paymentStatus}</td><td>{formatPrice(order.totalMinor)}</td><td><CancelDemoOrder reference={order.reference} status={order.status} paymentStatus={order.paymentStatus} paymentMethod={order.paymentMethod}/></td></tr>)}</tbody></table></div> : <p className="muted-copy">New customer orders will appear here.</p>}</section>
-      <p className="admin-note">Orders remain unfulfillable until Paystack confirms payment. Verify settlement in your Paystack dashboard as part of normal reconciliation.</p>
-    </main>
-  </>;
+  return <div className="admin-page-content">
+    <div className="admin-page-intro"><div><span className="admin-overline">STORE SUMMARY</span><h2>Overview</h2><p>Your store performance and latest activity at a glance.</p></div><span className="admin-date-chip">{new Intl.DateTimeFormat("en-KE", { timeZone: "Africa/Nairobi", dateStyle: "full" }).format(now)}</span></div>
+    <section className="admin-metrics" aria-label="Store metrics">
+      <article><span>Total revenue</span><strong>{formatPrice(revenue._sum.totalMinor ?? 0)}</strong><small>Paid orders, excluding cancellations</small></article>
+      <article><span>Orders today</span><strong>{todayOrders}</strong><small>Orders placed today</small></article>
+      <article><span>Total customers</span><strong>{customerCount}</strong><small>Registered customer accounts</small></article>
+      <article className={lowStockCount ? "metric-alert" : ""}><span>Low stock alerts</span><strong>{lowStockCount}</strong><small>{lowStockCount ? <Link href="/admin/products?stock=low">Review products below 5 units</Link> : "All published items are stocked"}</small></article>
+    </section>
+    <section className="admin-dashboard-grid">
+      <article className="admin-card sales-card"><div className="admin-card-heading"><div><h3>Sales trend</h3><p>Daily paid sales · last 14 days</p></div><span className="sales-total">{formatPrice(days.reduce((sum, day) => sum + day.value, 0))}</span></div><div className="sales-chart" role="img" aria-label="Daily paid revenue over the last 14 days">{days.map((day, index) => <div className="sales-chart-day" key={day.key} title={`${day.label}: ${formatPrice(day.value)}`}><span className="sales-bar-value">{day.value ? formatPrice(day.value) : ""}</span><div className="sales-bar-track"><span style={{ height: `${day.value ? Math.max(4, (day.value / maxSales) * 100) : 2}%` }}/></div><small>{index % 2 === 0 || index === days.length - 1 ? day.label : ""}</small></div>)}</div></article>
+      <article className="admin-card inventory-card"><div className="admin-card-heading"><div><h3>Inventory overview</h3><p>Current catalog availability</p></div><span className="inventory-icon">▣</span></div><div className="inventory-total"><strong>{products._sum.stockQuantity ?? 0}</strong><span>units on hand</span></div><div className="inventory-divider"/><div className="inventory-row"><span>Products in catalog</span><strong>{products._count.id}</strong></div><div className="inventory-row"><span>Items needing attention</span><strong className={lowStockCount ? "text-danger" : ""}>{lowStockCount}</strong></div><Link className="admin-text-link" href="/admin/products">Manage products →</Link></article>
+    </section>
+    <section className="admin-card recent-orders-card"><div className="admin-card-heading"><div><h3>Recent orders</h3><p>Latest customer activity</p></div><Link className="admin-text-link" href="/admin/orders">View all orders →</Link></div>{recentOrders.length ? <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Date</th><th>Total</th><th>Payment</th><th>Order status</th><th/></tr></thead><tbody>{recentOrders.map(order => <tr key={order.reference}><td><strong>{order.reference}</strong></td><td>{order.customerName}</td><td>{new Intl.DateTimeFormat("en-KE", { timeZone: "Africa/Nairobi", dateStyle: "medium" }).format(order.createdAt)}</td><td><strong>{formatPrice(order.totalMinor)}</strong></td><td><span className={`status-pill status-${order.paymentStatus}`}>{order.paymentStatus}</span></td><td><span className={`status-pill status-${order.status}`}>{order.status}</span></td><td><Link className="admin-view-link" href={`/admin/orders#${encodeURIComponent(order.reference)}`}>View</Link></td></tr>)}</tbody></table></div> : <div className="admin-empty-state">Orders will appear here when customers check out.</div>}</section>
+  </div>;
 }

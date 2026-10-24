@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { CartProvider } from "@/components/cart-provider";
+import { getSiteSettings } from "@/lib/site-settings";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Mahir Technology | Computing & Tech",
-  description:
-    "Shop genuine laptops, computer accessories and technology in Kenya with trusted warranty and delivery.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { siteName } = await getSiteSettings();
+  return { title: `${siteName} | Computing & Tech`, description: `Shop genuine laptops, computer accessories and technology in Kenya with trusted warranty and delivery from ${siteName}.` };
+}
 
 export default function RootLayout({
   children,

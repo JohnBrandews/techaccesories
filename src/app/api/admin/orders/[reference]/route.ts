@@ -58,12 +58,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ re
       await prisma.$transaction(async tx => {
         const current = await tx.order.findUnique({ where: { id: order.id }, include: { items: true } });
         if (!current) throw new OrderUpdateError("Order not found.");
-        if (current.status !== "pending" || current.paymentStatus !== "pending" || current.paymentMethod !== "demo") {
-          throw new OrderUpdateError("Only unpaid pending demo orders can be cancelled here.");
-        }
+        if (["dispatched", "delivered", "completed", "cancelled"].includes(current.status)) throw new OrderUpdateError("Orders that have shipped or finished cannot be cancelled here.");
         const changed = await tx.order.updateMany({
-          where: { id: current.id, status: "pending", paymentStatus: "pending" },
-          data: { status },
+          where: { id: current.id, status: current.status, paymentStatus: current.paymentStatus },
+          data: { status, ...(current.paymentStatus === "pending" ? { paymentStatus: "failed" } : {}) },
         });
         if (changed.count !== 1) throw new OrderUpdateError("Order status changed. Reload and try again.");
 
@@ -74,7 +72,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ re
           await tx.product.update({ where: { id: item.productId }, data: { stockQuantity: { increment: item.quantity } } });
           await tx.inventoryMovement.create({ data: { productId: item.productId, delta: item.quantity, previous: product.stockQuantity, next, reason: `Cancelled order ${reference}` } });
         }
-      });
+      }, { maxWait: 10_000, timeout: 15_000 });
     } else {
       const changed = await prisma.order.updateMany({ where: { id: order.id, status: order.status }, data: { status } });
       if (!changed.count) return NextResponse.json({ error: "Order status changed. Reload and try again." }, { status: 409 });

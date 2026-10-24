@@ -1,10 +1,11 @@
 import { Storefront } from "@/components/storefront";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/site-settings";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [categories, products] = await Promise.all([
+  const [categories, products, settings] = await Promise.all([
     prisma.category.findMany({
       where: { isActive: true, parentId: null },
       orderBy: { sortOrder: "asc" },
@@ -20,6 +21,7 @@ export default async function HomePage() {
         category: true,
       },
     }),
+    getSiteSettings(),
   ]);
 
   return (
@@ -43,6 +45,8 @@ export default async function HomePage() {
         imageUrl: product.images[0]?.url ?? null,
         imageAlt: product.images[0]?.altText ?? product.name,
       }))}
+      siteName={settings.siteName}
+      adminPhone={settings.adminPhone}
     />
   );
 }

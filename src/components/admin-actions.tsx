@@ -195,6 +195,24 @@ export function OrderStatusEditor({ reference, status, paymentMethod, paymentSta
   return <span className="stock-editor order-status-editor"><select aria-label={`Status for order ${reference}`} value={value} onChange={event => setValue(event.target.value)}><option value="pending">Pending</option><option value="dispatched">Dispatched</option><option value="delivered">Delivered</option><option value="completed">Completed</option></select><button className="secondary-button" disabled={saving || value === status} onClick={save}>{saving ? "Saving" : "Update"}</button>{message ? <small role="alert">{message}</small> : null}</span>;
 }
 
+export function OrderActionsMenu({ reference, status, paymentMethod, paymentStatus }: { reference: string; status: string; paymentMethod: string; paymentStatus: string }) {
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  async function update(nextStatus: string) {
+    if (!nextStatus || nextStatus === status) return;
+    if (nextStatus === "cancelled" && !window.confirm(`Cancel ${reference}? Any Paystack refund must be issued separately in Paystack.`)) return;
+    setSaving(true); setMessage("");
+    try {
+      const response = await fetch(`/api/admin/orders/${encodeURIComponent(reference)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: nextStatus }) });
+      const result = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(result.error ?? "Could not update order.");
+      window.location.reload();
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not update order."); setSaving(false); }
+  }
+  const disabled = status === "cancelled" || (paymentMethod !== "demo" && paymentStatus !== "paid");
+  return <span className="order-action-menu"><select aria-label={`Actions for order ${reference}`} disabled={saving || disabled} defaultValue="" onChange={event => { const next = event.target.value; event.target.value = ""; void update(next); }}><option value="">{saving ? "Saving…" : "Actions"}</option>{paymentStatus === "paid" || paymentMethod === "demo" ? <><option value="pending">Mark pending</option><option value="dispatched">Mark dispatched</option><option value="delivered">Mark delivered</option><option value="completed">Mark completed</option></> : null}<option value="cancelled">Cancel order</option></select>{message ? <small role="alert">{message}</small> : null}</span>;
+}
+
 export function AdminCategoryManager({ categories }: { categories: (Choice & { isActive: boolean })[] }) {
   const [message, setMessage] = useState(""); const [saving, setSaving] = useState(false);
   async function create(event: FormEvent<HTMLFormElement>) {

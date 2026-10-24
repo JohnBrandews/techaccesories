@@ -11,7 +11,7 @@ const kenyaCounties = [
 
 type Account = { email: string; name: string | null; role: string };
 
-export function StoreHeaderClient({ categories, account }: { categories: { id: string; name: string; slug: string }[]; account: Account | null }) {
+export function StoreHeaderClient({ categories, account, siteName }: { categories: { id: string; name: string; slug: string }[]; account: Account | null; siteName: string }) {
   const { count } = useCart();
   const [countyIndex, setCountyIndex] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -26,7 +26,7 @@ export function StoreHeaderClient({ categories, account }: { categories: { id: s
   return <>
     <div className="announcement"><div className="announcement-inner"><span>✦ Kenya delivery options</span><span className="announcement-divider">|</span><span>Local product catalog</span><span className="announcement-divider">|</span><span className="announcement-warranty">✓ Product warranty details shown on each listing</span><span className="announcement-payment">Payment integrations are being configured</span><a href="#footer">Customer support</a></div></div>
     <header className="site-header"><div className="header-main content-width">
-      <Link href="/" className="brand" aria-label="Mahir Technology home"><span className="brand-mark"><span>MT</span></span><span className="brand-copy"><strong>MAHIR TECHNOLOGY</strong><small>COMPUTING &amp; TECH</small></span></Link>
+      <Link href="/" className="brand" aria-label={`${siteName} home`}><span className="brand-mark"><span>{siteName.slice(0, 2).toUpperCase()}</span></span><span className="brand-copy"><strong>{siteName.toUpperCase()}</strong><small>COMPUTING &amp; TECH</small></span></Link>
       <form action="/catalog" className="search-box"><input name="q" aria-label="Search products" placeholder="Search laptops, monitors, accessories..."/><button aria-label="Search">⌕</button></form>
       <div className="header-action delivery-action"><span>⌖</span><div><small>DELIVER TO</small><strong key={countyIndex} className="delivery-county" aria-live="polite">{kenyaCounties[countyIndex]}, KE</strong></div></div>
       {account ? <details className="account-menu"><summary className="header-action account-action"><span className="profile-avatar">{profileName.slice(0, 1).toUpperCase()}</span><div><small>MY PROFILE</small><strong>{profileName}</strong></div><span className="profile-caret">⌄</span></summary><div className="account-dropdown"><span className="account-email">{account.email}</span><Link className="account-dashboard-link" href={dashboardHref}>Dashboard</Link><SignOutButton/></div></details> : <Link className="header-action account-action" href="/login"><span className="profile-avatar">♙</span><div><small>ACCOUNT</small><strong>Log in / Sign up</strong></div></Link>}

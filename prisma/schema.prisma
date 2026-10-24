@@ -162,3 +162,10 @@ model PasswordResetToken {
 
   @@index([userId, expiresAt])
 }
+
+model SiteSetting {
+  id         String   @id @default("global")
+  siteName   String   @default("Mahir Technology")
+  adminPhone String?
+  updatedAt  DateTime @updatedAt
+}
