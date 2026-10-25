@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CartProvider } from "@/components/cart-provider";
+import { FloatingWhatsApp } from "@/components/floating-whatsapp";
 import { getSiteSettings } from "@/lib/site-settings";
 import "./globals.css";
 
@@ -15,7 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body><CartProvider>{children}</CartProvider></body>
+      <body><CartProvider>{children}<FloatingWhatsApp /></CartProvider></body>
     </html>
   );
 }
